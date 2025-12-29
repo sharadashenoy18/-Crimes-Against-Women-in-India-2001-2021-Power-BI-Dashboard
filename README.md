@@ -1,32 +1,113 @@
- Crimes Against Women in India (2001–2021) – Power BI Dashboard
+# DAX Measures – Crimes Against Women (2001–2021)
 
- 📊 Overview
-This Power BI project analyzes reported crimes against women across India from 2001 to 2021. The dashboard highlights yearly trends, state-wise concentration, and crime-type dynamics, providing visual insights for understanding patterns and identifying areas that require attention.
-The goal is to combine data analysis and visualization to make social data more interpretable and actionable.
+This file explains the DAX measures used in the Power BI dashboard.
 
- 🗂 Dataset
+---
 
- Source: [Kaggle / NCRB Dataset] (replace with actual source)
- Time Period: 2001–2021
- Key Columns:
-   `State` – Indian states and union territories
-   `Year` – 2001–2021
-   `Crime Type` – Types of crimes against women
-   `Number of Cases` – Total cases reported
+## 1. `Total_Cases`
 
- 📈 Dashboard Visuals
-The dashboard includes:
-1. Yearly Trend Line – Total number of crimes reported each year.
-2. State-wise Bar / Heatmap – States with the highest reported crimes.
-3. Crime Type Stacked Column – Comparison of different crime types over the years.
-4. KPI Cards / Measures – Metrics like growth %, share %, and total cases.
+### DAX
 
- 🔍 Insights
- States like Maharashtra and Uttar Pradesh consistently report higher numbers of crimes against women.
- Certain crime types, such as domestic violence and assault, have steadily increased over the 21-year period.
- Some states show declining trends, indicating possible effects of awareness campaigns and policy interventions.
+```DAX
+Total_Cases = SUM(CrimesOnWomenData[Cases])
+```
 
- 🚀 Future Work
- Add district-level or city-level data for more granular insights.
- Integrate demographic or socio-economic factors to correlate with crime trends.
- Include predictive analytics using historical data to forecast future trends.
+### Explanation
+
+This measure returns the total number of crime cases against women by summing the `Cases` column.
+It is the main measure used across the dashboard and changes dynamically based on filters such as year, state, or crime type.
+
+---
+
+## 2. `YoY Change %`
+
+### DAX
+
+```DAX
+YoY Change % = 
+VAR CurrentYear = MAX(CrimesOnWomenData[Year])
+
+VAR CurrentYearCases =
+    CALCULATE(
+        SUM(CrimesOnWomenData[Cases]),
+        CrimesOnWomenData[Year] = CurrentYear
+    )
+
+VAR PreviousYearCases =
+    CALCULATE(
+        SUM(CrimesOnWomenData[Cases]),
+        CrimesOnWomenData[Year] = CurrentYear - 1
+    )
+
+RETURN
+DIVIDE(
+    CurrentYearCases - PreviousYearCases,
+    PreviousYearCases,
+    0
+) * 100
+```
+
+### Explanation
+
+This measure calculates the year-on-year percentage change in total crime cases.
+It compares the current year’s total with the previous year to show whether crimes have increased or decreased.
+
+`DIVIDE()` is used to avoid errors when the previous year value is zero.
+
+---
+
+## 3. `State Crime Share %`
+
+### DAX
+
+```DAX
+State Crime Share % = 
+DIVIDE(
+    SUM(CrimesOnWomenData[Cases]),
+    CALCULATE(
+        SUM(CrimesOnWomenData[Cases]),
+        ALL(CrimesOnWomenData[State])
+    )
+) * 100
+```
+
+### Explanation
+
+This measure shows how much each state contributes to the total number of crimes at the national level.
+It removes the state filter in the denominator so that each state’s share can be compared against the overall total.
+
+---
+
+## 4. `Crime Growth Index`
+
+### DAX
+
+```DAX
+Crime Growth Index = 
+VAR BaseYear =
+    CALCULATE(
+        MIN(CrimesOnWomenData[Year]),
+        ALLSELECTED(CrimesOnWomenData)
+    )
+
+VAR BaseYearCases =
+    CALCULATE(
+        SUM(CrimesOnWomenData[Cases]),
+        CrimesOnWomenData[Year] = BaseYear
+    )
+
+RETURN
+DIVIDE(
+    SUM(CrimesOnWomenData[Cases]),
+    BaseYearCases,
+    0
+)
+```
+
+### Explanation
+
+This measure compares crime cases in a selected year with the base year (earliest year in the selection).
+A value greater than 1 indicates an increase compared to the base year, while a value below 1 indicates a decrease.
+
+---
+
