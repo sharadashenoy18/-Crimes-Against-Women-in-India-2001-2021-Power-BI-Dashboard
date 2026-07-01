@@ -1,113 +1,48 @@
-# DAX Measures – Crimes Against Women (2001–2021)
+# Crimes Against Women in India — Power BI Dashboard (2001–2021)
 
-This file explains the DAX measures used in the Power BI dashboard.
-
----
-
-## 1. `Total_Cases`
-
-### DAX
-
-```DAX
-Total_Cases = SUM(CrimesOnWomenData[Cases])
-```
-
-### Explanation
-
-This measure returns the total number of crime cases against women by summing the `Cases` column.
-It is the main measure used across the dashboard and changes dynamically based on filters such as year, state, or crime type.
+A Power BI dashboard analyzing 20 years of NCRB data on crimes against women across India. The goal was to go beyond national totals and actually understand the patterns — which states consistently dominate the numbers, which crime types are growing, and what the trend looks like year on year.
 
 ---
 
-## 2. `YoY Change %`
+## What's in the dashboard
 
-### DAX
+**Page 1 — National Overview**
+Top-line KPIs: total reported cases, year-on-year change %, and a Crime Growth Index that benchmarks each year against 2001. Reported cases increased significantly over the two decades, though part of that reflects better reporting infrastructure rather than purely more incidents.
 
-```DAX
-YoY Change % = 
-VAR CurrentYear = MAX(CrimesOnWomenData[Year])
+**Page 2 — State-Level Analysis**
+Ranked view of states by total cases and State Crime Share % — which states account for a disproportionate share of national numbers. Drillable by crime type so you can see if a state's ranking changes depending on the offence.
 
-VAR CurrentYearCases =
-    CALCULATE(
-        SUM(CrimesOnWomenData[Cases]),
-        CrimesOnWomenData[Year] = CurrentYear
-    )
-
-VAR PreviousYearCases =
-    CALCULATE(
-        SUM(CrimesOnWomenData[Cases]),
-        CrimesOnWomenData[Year] = CurrentYear - 1
-    )
-
-RETURN
-DIVIDE(
-    CurrentYearCases - PreviousYearCases,
-    PreviousYearCases,
-    0
-) * 100
-```
-
-### Explanation
-
-This measure calculates the year-on-year percentage change in total crime cases.
-It compares the current year’s total with the previous year to show whether crimes have increased or decreased.
-
-`DIVIDE()` is used to avoid errors when the previous year value is zero.
+**Page 3 — Crime Type Trends**
+How individual crime categories have moved over 20 years. Domestic violence and kidnapping/abduction show the steepest rise. A few categories show declining trends in specific states, which points to regional policy differences worth looking into.
 
 ---
 
-## 3. `State Crime Share %`
+## DAX measures
 
-### DAX
+| Measure | What it does |
+|---|---|
+| `YoY Change %` | Year-on-year % change using VAR to compare current vs previous year in context |
+| `State Crime Share %` | Each state's share of national total — uses `ALL()` to remove state filter context |
+| `Crime Growth Index` | Indexes each year's count against 2001 as the base year |
 
-```DAX
-State Crime Share % = 
-DIVIDE(
-    SUM(CrimesOnWomenData[Cases]),
-    CALCULATE(
-        SUM(CrimesOnWomenData[Cases]),
-        ALL(CrimesOnWomenData[State])
-    )
-) * 100
-```
-
-### Explanation
-
-This measure shows how much each state contributes to the total number of crimes at the national level.
-It removes the state filter in the denominator so that each state’s share can be compared against the overall total.
+Full documentation in `DAX_measure.md`.
 
 ---
 
-## 4. `Crime Growth Index`
+## Tools used
 
-### DAX
-
-```DAX
-Crime Growth Index = 
-VAR BaseYear =
-    CALCULATE(
-        MIN(CrimesOnWomenData[Year]),
-        ALLSELECTED(CrimesOnWomenData)
-    )
-
-VAR BaseYearCases =
-    CALCULATE(
-        SUM(CrimesOnWomenData[Cases]),
-        CrimesOnWomenData[Year] = BaseYear
-    )
-
-RETURN
-DIVIDE(
-    SUM(CrimesOnWomenData[Cases]),
-    BaseYearCases,
-    0
-)
-```
-
-### Explanation
-
-This measure compares crime cases in a selected year with the base year (earliest year in the selection).
-A value greater than 1 indicates an increase compared to the base year, while a value below 1 indicates a decrease.
+- Power BI Desktop — data modelling, DAX, dashboard
+- Microsoft Excel — initial cleaning and formatting
 
 ---
 
+## Data source
+
+National Crime Records Bureau (NCRB), Government of India — [data.gov.in](https://data.gov.in)
+
+---
+
+## Author
+
+Sharada Shenoy — MSc Computer Science, Somaiya University  
+[LinkedIn](https://www.linkedin.com/in/sharada-shenoy-665a79275) · [GitHub](https://github.com/sharadashenoy18)
